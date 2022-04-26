@@ -93,7 +93,7 @@ void SimpleDelay_1AudioProcessor::changeProgramName (int index, const juce::Stri
 //==============================================================================
 void SimpleDelay_1AudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    auto delayBuffferSize = sampleRate * 40; // modefied to 40!
+    auto delayBuffferSize = sampleRate * 20; // modefied to 40!
     delayBuffer.setSize(getTotalNumInputChannels(), (int)delayBuffferSize);
 }
 
@@ -134,7 +134,8 @@ void SimpleDelay_1AudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
     juce::ScopedNoDenormals noDenormals;
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
-
+    
+    
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
@@ -142,17 +143,21 @@ void SimpleDelay_1AudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
     auto delayBufferSize = delayBuffer.getNumSamples();
     
 //    int count = 4; //times of echo appearing
+    auto gi = apvts.getRawParameterValue("delayGain");
+    auto g = gi->load();
     
-    auto g = 0.2f;
-    
-    auto g20 = 0.05f;
+    auto dc = apvts.getRawParameterValue("delayRate");
+    auto decay = dc->load();
+    auto g20 = 0.02f + 0.3f * decay;
     
     for (int channel = 0; channel < totalNumInputChannels; ++channel)
     {
-        
+//        if (channel == 1)
+//            g *= 3;
         filleBuffer(buffer, channel, bufferSize, delayBufferSize);
         
         //read from the past in the delay buffer, then add it back to the original signal
+        
         auto tm = apvts.getRawParameterValue("delayTime");
         float delayTime = tm->load();
 //        std::cout << delayTime << std::endl;
@@ -182,6 +187,10 @@ void SimpleDelay_1AudioProcessor::processBlock (juce::AudioBuffer<float>& buffer
             }
             
             g -= g20;
+            if ( g <= 0)
+            {
+                break;
+            }
         }
             
         
@@ -216,10 +225,10 @@ void SimpleDelay_1AudioProcessor::filleBuffer(juce::AudioBuffer<float>& buffer ,
     }
 }
 
-void SimpleDelay_1AudioProcessor::readBuffer(juce::AudioBuffer<float>& buffer, juce::AudioBuffer<float>& delayBuffer, int channel, int bufferSize, int delayTime, float gain)
-{
-
-}
+//void SimpleDelay_1AudioProcessor::readBuffer(juce::AudioBuffer<float>& buffer, juce::AudioBuffer<float>& delayBuffer, int channel, int bufferSize, int delayTime, float gain)
+//{
+//
+//}
 
 //==============================================================================
 bool SimpleDelay_1AudioProcessor::hasEditor() const
@@ -256,6 +265,10 @@ juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 juce::AudioProcessorValueTreeState::ParameterLayout SimpleDelay_1AudioProcessor::createParameterLayout()
 {
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
-    layout.add(std::make_unique<juce::AudioParameterFloat>("delayTime","delay time", 0.0f, 2.0f, 1.0f));
+    
+    layout.add(std::make_unique<juce::AudioParameterFloat>("delayTime","delay time", 0.0f, 1.0f, 0.5f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("delayGain","delay gain", 0.0f, 1.0f, 0.5f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>("delayRate","delay rate", 0.0f, 1.0f, 0.5f));
+    
     return layout;
 }

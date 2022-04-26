@@ -26,7 +26,11 @@ public:
 
 private:
     juce::Slider timeSlider;
+    juce::Slider gainSlider;
+    juce::Slider decayRateSlider;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> timeSliderAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> gainSliderAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> decayRateSliderAttachment;
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     SimpleDelay_1AudioProcessor& audioProcessor;
